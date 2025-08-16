@@ -344,28 +344,44 @@ const LoginPage: React.FC = () => {
 const DashboardPage: React.FC = () => {
     const { t } = useLanguage();
     const [receipts, setReceipts] = useState<Receipt[]>([]);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
     
     useEffect(() => {
-        const fetchReceipts = async () => {
-            const data = await getAllReceipts();
-            setReceipts(data);
+        const fetchData = async () => {
+            const receiptsData = await getAllReceipts();
+            setReceipts(receiptsData);
+            const expensesData = await getAllExpenses();
+            setExpenses(expensesData);
         };
-        fetchReceipts();
+        fetchData();
     }, []);
 
-    const totalAmount = receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+    const totalReceiptAmount = receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+    const totalIncomeFromExpenses = expenses.filter(e => e.amount > 0).reduce((sum, e) => sum + e.amount, 0);
+    const totalIncome = totalReceiptAmount + totalIncomeFromExpenses;
+
+    const totalExpenseAmount = expenses.filter(e => e.amount < 0).reduce((sum, e) => sum + Math.abs(e.amount), 0);
+    
+    const netBalance = totalIncome - totalExpenseAmount;
 
     return (
         <div>
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-6">{t('dashboard')}</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
-                    <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300">{t('totalReceipts')}</h3>
-                    <p className="text-4xl font-bold text-primary mt-2">{receipts.length}</p>
+                    <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300">{t('totalIncome')}</h3>
+                    <p className="text-4xl font-bold text-green-500 mt-2">₹{totalIncome.toLocaleString('en-IN')}</p>
+                    <p className="text-sm text-slate-500 mt-1">{receipts.length} {t('receipts')}</p>
                 </Card>
                 <Card>
-                    <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300">{t('totalAmount')}</h3>
-                    <p className="text-4xl font-bold text-green-500 mt-2">₹{totalAmount.toLocaleString('en-IN')}</p>
+                    <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300">{t('totalExpense')}</h3>
+                    <p className="text-4xl font-bold text-red-500 mt-2">₹{totalExpenseAmount.toLocaleString('en-IN')}</p>
+                </Card>
+                <Card>
+                    <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300">{t('netBalance')}</h3>
+                    <p className={`text-4xl font-bold mt-2 ${netBalance >= 0 ? 'text-primary' : 'text-orange-500'}`}>
+                        ₹{netBalance.toLocaleString('en-IN')}
+                    </p>
                 </Card>
             </div>
         </div>

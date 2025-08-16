@@ -43,7 +43,7 @@ export const exportExpensesToPdf = (expenses: Expense[], t: (key: string) => str
   const body = expenses.map(e => [
       e.date,
       e.description,
-      `₹${e.amount.toFixed(2)}`
+      e.amount
   ]);
   
   (doc as any).autoTable({
@@ -57,17 +57,23 @@ export const exportExpensesToPdf = (expenses: Expense[], t: (key: string) => str
     },
     willDrawCell: (data: any) => {
         if (data.column.index === 2 && data.cell.section === 'body') {
-            const amount = parseFloat(data.cell.text[0].replace(/[₹,]/g, ''));
-            if (amount < 0) {
-                 doc.setTextColor(255, 0, 0); // Red for expenses
-            } else {
-                 doc.setTextColor(0, 128, 0); // Green for income
+            const amount = data.cell.raw;
+            if (typeof amount === 'number') {
+                if (amount < 0) {
+                     doc.setTextColor(255, 0, 0); // Red for expenses
+                } else {
+                     doc.setTextColor(0, 128, 0); // Green for income
+                }
             }
         }
     },
     didParseCell: (data: any) => {
       if (data.column.index === 2 && data.cell.section === 'body') {
         data.cell.styles.halign = 'right';
+        const amount = data.cell.raw;
+        if (typeof amount === 'number') {
+            data.cell.text = [amount >= 0 ? `+₹${amount.toFixed(2)}` : `-₹${Math.abs(amount).toFixed(2)}`];
+        }
       }
     }
   });
